@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mommy's Birthday</title>
+    <style>
+        /* --- Basic Setup & Fonts --- */
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;700&family=Poppins:wght@300&display=swap');
+
+        :root {
+            --main-star-color: #ffd700; /* Gold */
+            --text-color: #e0e0e0;
+            --heading-color: #ffffff;
+            --aurora-1: #0ff; /* Cyan */
+            --aurora-2: #4dff4d; /* Bright Green */
+            --aurora-3: #f0f; /* Magenta */
+            --plaque-bg: rgba(10, 20, 40, 0.85);
+            --plaque-border: rgba(173, 216, 230, 0.5);
+        }
+
+        body, html {
+            margin: 0; padding: 0; height: 100%; width: 100%;
+            background: #000;
+            background-image: radial-gradient(ellipse at 70% 20%, #0c1a2e 0%, transparent 50%),
+                              radial-gradient(ellipse at 30% 80%, #1a1a3a 0%, transparent 50%),
+                              radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
+            color: var(--text-color); font-family: 'Poppins', sans-serif;
+            overflow: hidden; cursor: none;
+        }
+
+        /* --- Effects & Canvas --- */
+        .aurora { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+        .aurora__item { position: absolute; top: 0; left: 50%; width: 200%; height: 40vh; background: linear-gradient(to top, transparent, var(--aurora-1) 70%); border-radius: 50%; filter: blur(30px); opacity: 0.3; transform-origin: center top; animation: aurora-sway 10s linear infinite alternate; }
+        .aurora__item:nth-child(2) { background: linear-gradient(to top, transparent, var(--aurora-2) 70%); animation-duration: 12s; animation-delay: -3s; opacity: 0.25; }
+        .aurora__item:nth-child(3) { background: linear-gradient(to top, transparent, var(--aurora-3) 70%); animation-duration: 15s; animation-delay: -5s; opacity: 0.28; }
+        @keyframes aurora-sway { from { transform: translateX(-50%) rotate(-20deg); } to { transform: translateX(-50%) rotate(20deg); } }
+        #universe-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .mouse-nebula { position: fixed; z-index: 999; width: 50px; height: 50px; background: radial-gradient(circle, rgba(173, 216, 230, 0.2) 0%, rgba(230, 190, 255, 0.2) 50%, transparent 70%); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); transition: width 0.3s ease, height 0.3s ease; filter: blur(10px); }
+        .content-container { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; text-align: center; height: 100%; padding: 5vh 2rem 0 2rem; box-sizing: border-box; pointer-events: none; }
+        
+        /* --- Text Styling --- */
+        h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 400; color: var(--heading-color); margin: 0; letter-spacing: 0.1em; text-shadow: 0 0 15px rgba(255, 255, 255, 0.3), 0 0 30px rgba(255, 215, 0, 0.2); }
+        .subtitle { font-size: clamp(1rem, 2.5vw, 1.2rem); font-weight: 300; margin-top: 1rem; letter-spacing: 0.05em; max-width: 500px; }
+        
+        #star-tooltip { position: fixed; z-index: 4; background-color: var(--plaque-bg); color: var(--heading-color); padding: 8px 15px; border-radius: 8px; font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 700; border: 1px solid var(--plaque-border); pointer-events: none; opacity: 0; transform: translate(-50%, -150%); transition: opacity 0.3s ease, transform 0.3s ease; white-space: nowrap; }
+
+        /* --- Dedication Plaque (Starts hidden) --- */
+        #dedication-plaque { position: fixed; z-index: 3; bottom: 10%; left: 50%; transform: translateX(-50%); padding: 1.5rem 2.5rem; background: var(--plaque-bg); border: 1px solid var(--plaque-border); border-radius: 10px; text-align: center; opacity: 0; transition: opacity 2s ease-in-out; backdrop-filter: blur(5px); font-family: 'Cormorant Garamond', serif; }
+        #plaque-title { font-size: clamp(0.9rem, 2vw, 1.1rem); color: var(--text-color); margin: 0 0 0.5rem 0; letter-spacing: 0.2em; text-transform: uppercase; }
+        #plaque-name { font-size: clamp(1.5rem, 4vw, 2.5rem); color: var(--heading-color); margin: 0; font-weight: 700; text-shadow: 0 0 10px var(--main-star-color); }
+        #plaque-date { font-size: 0.9rem; color: var(--text-color); margin-top: 1rem; opacity: 0.7; }
+
+        /* --- Final Message (Starts hidden) --- */
+        .final-message { position: fixed; bottom: 5%; left: 50%; transform: translateX(-50%) translateY(20px); z-index: 2; font-family: 'Cormorant Garamond', serif; font-size: clamp(1.2rem, 3vw, 1.5rem); width: 80%; max-width: 600px; opacity: 0; transition: opacity 2s 1s ease-in-out, transform 2s 1s ease-in-out; letter-spacing: 0.05em; text-align: center; }
+
+    </style>
+</head>
+<body>
+    <div class="aurora"><div class="aurora__item"></div><div class="aurora__item"></div><div class="aurora__item"></div></div>
+    <canvas id="universe-canvas"></canvas>
+    <div class="mouse-nebula"></div>
+
+    <div class="content-container">
+        <h1 id="main-title">Happy Birthday, My North Star</h1>
+        <p id="main-subtitle" class="subtitle">In the vastness of space, some stars shine brighter. Tap or hover over them to reveal their light.</p>
+    </div>
+
+    <div id="star-tooltip"></div>
+
+    <div id="dedication-plaque">
+        <p id="plaque-title">Newly Charted Constellation</p>
+        <h2 id="plaque-name"></h2>
+        <p id="plaque-date"></p>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        // ===================================================================
+        // --- CONFIGURATION ---
+        // ===================================================================
+        const CONFIG = {
+            momName: "Sai Disha", 
+            starLabels: [
+  'Your Eyes',
+  'Your Laugh',
+  'Your Voice',
+  'Your Energy',
+  'Your Presence',
+  'Your Style',
+  'Your Charm',
+  'Your Heart',
+  'Your Magic'
+],
+
+        };
+        // ===================================================================
+
+        // --- Element Caching ---
+        const canvas = document.getElementById('universe-canvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('star-tooltip');
+        const finalMsgEl = document.getElementById('final-message');
+        const plaque = document.getElementById('dedication-plaque');
+        const plaqueName = document.getElementById('plaque-name');
+        const plaqueDate = document.getElementById('plaque-date');
+        const nebula = document.querySelector('.mouse-nebula');
+
+        // --- State Variables ---
+        let stars = [], mainStars = [], shootingStars = [], particles = [];
+        let revealedStars = new Set();
+        let isConstellationComplete = false;
+        let lineAnimationProgress = 0;
+        let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        let constellationData;
+
+        // --- Event Listeners ---
+        window.addEventListener('resize', init);
+        window.addEventListener('mousemove', e => {
+            // Make canvas interactive again by setting pointer-events
+            canvas.style.pointerEvents = 'auto';
+            mouse.x = e.clientX; 
+            mouse.y = e.clientY; 
+            nebula.style.left = `${e.clientX}px`; 
+            nebula.style.top = `${e.clientY}px`; 
+        });
+        window.addEventListener('click', e => createStardust(e.clientX, e.clientY));
+
+        // --- CLASSES ---
+        class Star { constructor(x,y,r){this.x=x;this.y=y;this.r=r;this.baseR=r;this.alpha=Math.random()*0.5+0.5;this.twinkleSpeed=Math.random()*0.02;this.parallax=Math.random()*0.02+0.01} draw(){const pX=(mouse.x-canvas.width/2)*this.parallax;const pY=(mouse.y-canvas.height/2)*this.parallax;ctx.save();ctx.beginPath();ctx.arc(this.x+pX,this.y+pY,this.r,0,Math.PI*2);ctx.fillStyle=`rgba(255,255,255,${this.alpha})`;ctx.shadowColor='#fff';ctx.shadowBlur=this.r*2;ctx.fill();ctx.restore()} update(){this.alpha=0.5+Math.sin(Date.now()*this.twinkleSpeed)*0.5;this.draw()} }
+        class MainStar extends Star { constructor(x,y,r,label){super(x,y,r);this.label=label;this.isHovered=false;this.revealed=false;this.parallax=0.04} update(){const pX=(mouse.x-canvas.width/2)*this.parallax;const pY=(mouse.y-canvas.height/2)*this.parallax;const cX=this.x+pX;const cY=this.y+pY;const dist=Math.hypot(cX-mouse.x,cY-mouse.y);this.isHovered=dist<this.r*5;if(this.isHovered&&!this.revealed){this.revealed=true;revealedStars.add(this.label);checkAllRevealed()} this.r=this.isHovered||isConstellationComplete?this.baseR*(this.isHovered?1.8:1.5):this.baseR;this.draw();return{x:cX,y:cY,isHovered:this.isHovered}} }
+        class ShootingStar { constructor(){this.reset()} reset(){this.x=Math.random()*canvas.width;this.y=Math.random()*canvas.height*0.2;this.len=Math.random()*80+10;this.speed=Math.random()*10+6;this.size=Math.random()*1+0.5;this.life=1} update(){this.x+=this.speed;this.y+=this.speed*0.5;this.life-=0.01;if(this.life<=0)this.reset()} draw(){ctx.save();ctx.beginPath();const grad=ctx.createLinearGradient(this.x,this.y,this.x-this.len,this.y-this.len*0.5);grad.addColorStop(0,`rgba(255,255,224,${this.life})`);grad.addColorStop(1,'rgba(0,0,0,0)');ctx.strokeStyle=grad;ctx.lineWidth=this.size;ctx.moveTo(this.x,this.y);ctx.lineTo(this.x-this.len,this.y-this.len*0.5);ctx.stroke();ctx.restore()} }
+        class Particle {
+            constructor(x, y) { this.x = x; this.y = y; this.size = Math.random() * 2 + 1; this.life = 1; const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 3 + 1; this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed; }
+            update() { this.x += this.vx; this.y += this.vy; this.life -= 0.02; }
+            draw() { ctx.save(); ctx.fillStyle = `rgba(255, 215, 0, ${this.life})`; ctx.shadowColor = `rgba(255, 215, 0, 1)`; ctx.shadowBlur = 5; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+        }
+        function createStardust(x, y) { for(let i = 0; i < 15; i++) { particles.push(new Particle(x, y)); } }
+
+        // --- Core Functions ---
+        function generateRandomConstellation(numPoints) {
+            const points = [];
+            for (let i = 0; i < numPoints; i++) {
+                points.push({
+                    x: Math.random() * 0.8 + 0.1,
+                    y: Math.random() * 0.8 + 0.1
+                });
+            }
+            const indices = points.map((_, i) => i);
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            return { points: points, lines: [indices] };
+        }
+
+        function checkAllRevealed() {
+            if (revealedStars.size >= mainStars.length && !isConstellationComplete) {
+                isConstellationComplete = true;
+                setTimeout(() => {
+                    plaque.style.opacity = '1';
+                    finalMsgEl.style.opacity = '1';
+                    finalMsgEl.style.transform = 'translateX(-50%) translateY(0)';
+                }, 1500); 
+            }
+        }
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            stars = []; mainStars = []; shootingStars = []; particles = [];
+            revealedStars.clear(); isConstellationComplete = false; lineAnimationProgress = 0;
+
+            for (let i = 0; i < 300; i++) stars.push(new Star(Math.random()*canvas.width, Math.random()*canvas.height, Math.random()*1.5));
+            for (let i = 0; i < 3; i++) shootingStars.push(new ShootingStar());
+            
+            const numStars = Math.floor(Math.random() * 5) + 5;
+            const labels = [...CONFIG.starLabels].sort(() => Math.random() - 0.5);
+            constellationData = generateRandomConstellation(Math.min(numStars, labels.length));
+
+            // FIX: This new logic calculates a "safe area" to prevent overlap.
+            // It reserves space at the top and bottom for the UI elements.
+            const topMargin = canvas.height * 0.25;      // Reserve top 25% for title.
+            const bottomMargin = canvas.height * 0.30;   // Reserve bottom 30% for plaque.
+            
+            const availableHeight = canvas.height - topMargin - bottomMargin;
+            const availableWidth = canvas.width * 0.9; // Use 90% of width for side margins.
+
+            // The constellation box will be sized based on the smaller available dimension
+            // to ensure it fits well on any screen aspect ratio.
+            const boxSize = Math.min(availableWidth, availableHeight);
+            
+            const boxWidth = boxSize;
+            const boxHeight = boxSize * 0.8; // Give it a slightly rectangular aspect ratio.
+
+            // Center this box within the calculated "safe zone".
+            const offsetX = (canvas.width - boxWidth) / 2;
+            const offsetY = topMargin + (availableHeight - boxHeight) / 2;
+
+            constellationData.points.forEach((point, i) => {
+                const x = offsetX + point.x * boxWidth;
+                const y = offsetY + point.y * boxHeight;
+                mainStars.push(new MainStar(x, y, 5, labels[i % labels.length] || `Star ${i+1}`));
+            });
+
+            plaqueName.textContent = `Stella ${CONFIG.momName}`;
+            plaqueDate.textContent = `Charted on: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            [...shootingStars, ...stars].forEach(s => s.update());
+            particles.forEach((p, i) => { p.update(); p.draw(); if(p.life <= 0) particles.splice(i, 1); });
+            
+            const mainStarPositions = mainStars.map(s => s.update());
+
+            if (isConstellationComplete) {
+                if (lineAnimationProgress < 1) lineAnimationProgress += 0.01;
+                const pulse = 0.5 + Math.sin(Date.now() * 0.002) * 0.5;
+                ctx.save();
+                ctx.strokeStyle = `rgba(255, 215, 0, ${0.3 + pulse * 0.4})`;
+                ctx.shadowColor = 'rgba(255, 215, 0, 1)';
+                ctx.shadowBlur = 10 + pulse * 15;
+                ctx.lineWidth = 2;
+
+                constellationData.lines.forEach(lineSet => {
+                    for (let i = 0; i < lineSet.length - 1; i++) {
+                        const fromPos = mainStarPositions[lineSet[i]];
+                        const toPos = mainStarPositions[lineSet[i+1]];
+
+                        if (fromPos && toPos) {
+                            ctx.beginPath();
+                            ctx.moveTo(fromPos.x, fromPos.y);
+                            const animX = fromPos.x + (toPos.x - fromPos.x) * lineAnimationProgress;
+                            const animY = fromPos.y + (toPos.y - fromPos.y) * lineAnimationProgress;
+                            ctx.lineTo(animX, animY);
+                            ctx.stroke();
+                        }
+                    }
+                });
+                ctx.restore();
+            }
+
+            let anyStarHovered = mainStarPositions.some((pos, i) => {
+                if (pos.isHovered) {
+                    tooltip.style.left = `${pos.x}px`;
+                    tooltip.style.top = `${pos.y}px`;
+                    tooltip.textContent = mainStars[i].label;
+                    tooltip.style.opacity = '1';
+                    tooltip.style.transform = 'translate(-50%, -150%)';
+                    return true;
+                }
+                return false;
+            });
+
+            nebula.style.width = anyStarHovered ? '80px' : '50px';
+            nebula.style.height = anyStarHovered ? '80px' : '50px';
+            
+            if (!anyStarHovered) {
+                tooltip.style.opacity = '0';
+                tooltip.style.transform = 'translate(-50%, -150%)';
+            }
+        }
+
+        init();
+        animate();
+    });
+    </script>
+</body>
+</html>
